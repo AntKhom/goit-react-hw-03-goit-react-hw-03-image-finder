@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import ImageGalleryItem from "./ImageGalleryItem";
+import Loader from "./Loader";
 
 const BASE_URL = "https://pixabay.com/api/";
 const ITEM_PER_PAGE = 12;
@@ -8,8 +9,8 @@ const KEY = "39464156-6c3d114a5269f1cf634bfe107"
 export default class ImageGallery extends Component {
     state = {
         pictures: null,
-        loading: false,
         error: null,
+        status: 'idle',
     }
 
     componentDidUpdate(prevProps, prevState) {
@@ -18,11 +19,12 @@ export default class ImageGallery extends Component {
         if (prevQuery !== newQuery) {
             console.log(newQuery);
 
-            this.setState({loading: true});
+            this.setState({status:'pending'});
 
             const url = `${BASE_URL}?q=${newQuery}&page=1&key=${KEY}&image_type=photo&orientation=horizontal&per_page=${ITEM_PER_PAGE}`
             console.log(url);
             fetch(url
+                //For Axios only
                 //         // params : {
                 //         //     key: "39464156-6c3d114a5269f1cf634bfe107",
                 //         //     q: newQuery,
@@ -35,36 +37,40 @@ export default class ImageGallery extends Component {
                 .then(res => res.json())
                 .then(pictures => {
                     console.log(pictures.hits);
-                    this.setState({ pictures: pictures.hits });
+                    this.setState({ pictures: pictures.hits, status:'resolved' });
                 })
                 .catch(error => {
-                    this.setState({ error })
+                    this.setState({ error, status: 'error' });
                 })
-                .finally(() => {
-                    this.setState({ loading: false });
-                });
         }
     }
     
     
     render() {
-        const { error, pictures, loading } = this.state;
+        const { error, pictures, status } = this.state;
 
-        return (
-            <div>
-                {error && <div>{'error'}</div>}
-                {loading && <div>Loading....</div>}
-                {!this.props.query && <div>No data</div>}
-                {pictures && <ul className="gallery">
-                    {pictures.map(picture =>
-                        <ImageGalleryItem
-                            key={picture.id}
-                            imgUrl={picture.webformatURL}
-                            imgName={picture.largeImageURL}
-                        />
-                    )}
-                </ul>}
-            </div>    
-        );
-    }    
+        if (status === 'idle') {
+            return <div>No data</div>
+        }
+
+        if (status === 'pending') {
+            return <Loader/ >
+        }
+        
+        if (status === 'rejected') {
+            return <div>{error.message}</div>
+        }
+        
+        if (status === 'resolved') {
+            return <ul className="gallery">
+                {pictures.map(picture =>
+                    <ImageGalleryItem
+                        key={picture.id}
+                        imgUrl={picture.webformatURL}
+                        imgName={picture.largeImageURL}
+                    />
+                )}
+            </ul>
+        }
+    }
 }
