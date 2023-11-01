@@ -1,10 +1,10 @@
 import React, { Component } from "react";
 import ImageGalleryItem from "./ImageGalleryItem";
 import Loader from "./Loader";
+import { fetchPictures } from "api/api";
+import css from "../css/imageGallery.module.css"
 
-const BASE_URL = "https://pixabay.com/api/";
-const ITEM_PER_PAGE = 12;
-const KEY = "39464156-6c3d114a5269f1cf634bfe107"
+
 
 export default class ImageGallery extends Component {
     state = {
@@ -21,21 +21,7 @@ export default class ImageGallery extends Component {
 
             this.setState({status:'pending'});
 
-            const url = `${BASE_URL}?q=${newQuery}&page=1&key=${KEY}&image_type=photo&orientation=horizontal&per_page=${ITEM_PER_PAGE}`
-            console.log(url);
-            fetch(url
-                //For Axios only
-                //         // params : {
-                //         //     key: "39464156-6c3d114a5269f1cf634bfe107",
-                //         //     q: newQuery,
-                //         //     safesearch: true,   
-                //         //     per_page: ITEM_PER_PAGE,
-                //         //     image_type: "photo",
-                //         //     orientation: "horizontal",
-                //         // },
-            )
-                .then(res => res.json())
-                .then(pictures => {
+                fetchPictures(newQuery,1).then(pictures => {
                     console.log(pictures.hits);
                     this.setState({ pictures: pictures.hits, status:'resolved' });
                 })
@@ -62,12 +48,13 @@ export default class ImageGallery extends Component {
         }
         
         if (status === 'resolved') {
-            return <ul className="gallery">
+            return <ul className={css.ImageGallery}>
                 {pictures.map(picture =>
                     <ImageGalleryItem
                         key={picture.id}
                         imgUrl={picture.webformatURL}
-                        imgName={picture.largeImageURL}
+                        imgBigUrl={picture.largeImageURL}
+                        onClick={()=>this.props.openModal(picture.largeImageURL)}
                     />
                 )}
             </ul>
